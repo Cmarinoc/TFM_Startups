@@ -5,9 +5,7 @@ import os
 import pycats 
 from pycats import cat_lump
 import joblib
-
-
-
+from sklearn.ensemble import GradientBoostingClassifier
 
 def train_model():
 
@@ -130,16 +128,16 @@ def train_model():
 	# Seleccionamos sólo variables de tipo "object"
 	df_only_cat = train_final.select_dtypes(include=[object])
 	
+	
 	# Sustituimos categorías por la proporción de Success
 	for var in df_only_cat.columns:
-		prop = train_final.groupby(var)["status"].sum()/len(train_final)
-		df_only_cat[var] = df_only_cat[var].map(prop)
+		vars()[var] = train_final.groupby(var)["status"].sum()/len(train_final)
+		df_only_cat[var] = df_only_cat[var].map(vars()[var])
 	
 	# Concatenamos con el resto de variables
 	train_final = pd.concat([train_final.drop(df_only_cat.columns, axis=1), df_only_cat], axis=1)
 	
-	
-	model = Lasso(alpha=0.0001, normalize=True, max_iter=10000) #cambiar algoritmo
+	model = GradientBoostingClassifier(learning_rate=0.1, max_features='log2', min_samples_split=2, n_estimators=500, subsample=0.8)  
 	
 	model_fit = model.fit(train_final[features_final_model], train_final['status'])
 	
@@ -150,6 +148,15 @@ def train_model():
 	print("Model dumped!")
 
 
-
-
+	# Save categorical variables
+	
+	joblib.dump(df_only_cat.columns.tolist(), 'categorical_vars.pkl')
+	print("Model dumped!")
+	
+	#Save tables with categorical encoding
+	
+	for var in df_only_cat.columns:
+	
+		joblib.dump(vars()[var], 'temp_files/category_encoding/'+var+'.pkl')
+		
 
